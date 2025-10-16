@@ -30,14 +30,14 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const { totalRevenue, totalCost, totalNetProfit } = useMemo(() => {
     if (!products) return { totalRevenue: 0, totalCost: 0, totalNetProfit: 0 };
     
-    // Faturamento Bruto Total: Soma total das vendas. (Correct)
+    // Faturamento Bruto Total: Soma total das vendas (valor de venda * quantidade vendida).
     const revenue = products.reduce((acc, p) => acc + p.salePrice * p.quantitySold, 0);
 
-    // Custo Total do Inventário: Custo total de todos os produtos comprados. (Correct)
+    // Custo Total do Inventário: Custo total de todos os produtos comprados (valor de compra * quantidade comprada).
     const totalCostOfInventory = products.reduce((acc, p) => acc + p.purchasePrice * p.quantityBought, 0);
     
-    // Lucro Líquido Total: Faturamento total menos o custo total de todo o inventário.
-    const netProfit = revenue - totalCostOfInventory;
+    // Lucro Líquido Total: Soma do lucro individual de cada produto vendido.
+    const netProfit = products.reduce((acc, p) => acc + (p.salePrice - p.purchasePrice) * p.quantitySold, 0);
 
     return { totalRevenue: revenue, totalCost: totalCostOfInventory, totalNetProfit: netProfit };
   }, [products]);
