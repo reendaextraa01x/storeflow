@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -10,6 +10,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import {
   Card,
   CardContent,
@@ -59,6 +70,7 @@ const productSchema = z.object({
   purchasePrice: z.coerce.number().min(0, 'Deve ser positivo.'),
   salePrice: z.coerce.number().min(0, 'Deve ser positivo.'),
   quantitySold: z.coerce.number().min(0, 'Deve ser positivo.'),
+  lastSaleDate: z.date().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -100,6 +112,7 @@ export default function ProductsClient() {
         purchasePrice: product.purchasePrice,
         salePrice: product.salePrice,
         quantitySold: product.quantitySold,
+        lastSaleDate: product.lastSaleDate?.toDate()
       });
     } else {
       form.reset({
@@ -108,6 +121,7 @@ export default function ProductsClient() {
         purchasePrice: 0,
         salePrice: 0,
         quantitySold: 0,
+        lastSaleDate: new Date(),
       });
     }
     setDialogOpen(true);
@@ -117,15 +131,19 @@ export default function ProductsClient() {
     if (!user) return;
 
     try {
+      const productData = {
+        ...data,
+        lastSaleDate: data.lastSaleDate || new Date(), // Fallback to current date
+      };
+
       if (editingProduct) {
         const productRef = doc(firestore, 'users', user.uid, 'products', editingProduct.id);
-        await updateDoc(productRef, { ...data, lastSaleDate: serverTimestamp() });
+        await updateDoc(productRef, productData);
         toast({ title: 'Produto atualizado com sucesso!' });
       } else {
         await addDoc(collection(firestore, 'users', user.uid, 'products'), {
-          ...data,
+          ...productData,
           userId: user.uid,
-          lastSaleDate: serverTimestamp(),
         });
         toast({ title: 'Produto adicionado com sucesso!' });
       }
@@ -309,13 +327,26 @@ export default function ProductsClient() {
                                     <Pencil className="mr-2 h-4 w-4" />
                                     <span>Editar</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                    onClick={() => handleDelete(product.id)} 
-                                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    <span>Excluir</span>
-                                </DropdownMenuItem>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" className="w-full justify-start p-2 h-8 font-normal text-destructive focus:text-destructive focus:bg-destructive/10">
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      <span>Excluir</span>
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Essa ação não pode ser desfeita. Isso excluirá permanentemente o produto.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDelete(product.id)}>Continuar</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                             </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

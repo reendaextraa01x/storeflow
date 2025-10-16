@@ -1,11 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend, Line, LineChart } from 'recharts';
 import { ChartContainer, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from './ui/skeleton';
 import { useProducts } from '@/context/products-context';
+import type { Product } from '@/lib/types';
 
 const formatCurrency = (value: number) => {
     if (Math.abs(value) >= 1000) {
@@ -20,37 +22,79 @@ const formatCurrency = (value: number) => {
 const chartConfig: ChartConfig = {
     lucro: {
         label: 'Lucro',
-        color: 'hsl(var(--primary))',
+        color: 'hsl(var(--chart-1))',
     },
     receita: {
         label: 'Receita',
-        color: 'hsl(var(--primary))',
+        color: 'hsl(var(--chart-1))',
     },
     custo: {
         label: 'Custo',
-        color: 'hsl(var(--destructive))',
+        color: 'hsl(var(--chart-2))',
     },
 };
 
+
+const availableYears = Array.from(new Set(
+    ((): number[] => {
+      const currentYear = new Date().getFullYear();
+      const years: number[] = [];
+      for (let i = 0; i < 5; i++) {
+        years.push(currentYear - i);
+      }
+      return years;
+    })()
+  )).sort((a, b) => b - a);
+
+const availableMonths = [
+    { value: 'all', label: 'Todos os meses' },
+    { value: '0', label: 'Janeiro' },
+    { value: '1', label: 'Fevereiro' },
+    { value: '2', label: 'Março' },
+    { value: '3', label: 'Abril' },
+    { value: '4', label: 'Maio' },
+    { value: '5', label: 'Junho' },
+    { value: '6', label: 'Julho' },
+    { value: '7', label: 'Agosto' },
+    { value: '8', label: 'Setembro' },
+    { value: '9', label: 'Outubro' },
+    { value: '10', label: 'Novembro' },
+    { value: '11', label: 'Dezembro' },
+];
+
+
 export default function ReportsClient() {
     const { products, isLoading } = useProducts();
+    const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
+    const [selectedMonth, setSelectedMonth] = useState<string>('all');
+
+    const filteredProducts = useMemo(() => {
+        if (!products) return [];
+        return products.filter((product: Product) => {
+            if (!product.lastSaleDate) return false;
+            const saleDate = product.lastSaleDate.toDate();
+            const yearMatch = saleDate.getFullYear() === parseInt(selectedYear);
+            const monthMatch = selectedMonth === 'all' || saleDate.getMonth() === parseInt(selectedMonth);
+            return yearMatch && monthMatch;
+        });
+    }, [products, selectedYear, selectedMonth]);
 
     const profitData = useMemo(() => {
-        if (!products) return [];
-        return products.map(p => ({
+        if (!filteredProducts) return [];
+        return filteredProducts.map(p => ({
             name: p.name,
             lucro: (p.salePrice - p.purchasePrice) * p.quantitySold,
         })).filter(p => p.lucro !== 0).sort((a,b) => b.lucro - a.lucro);
-    }, [products]);
+    }, [filteredProducts]);
 
     const revenueCostData = useMemo(() => {
-        if (!products) return [];
-        return products.map(p => ({
+        if (!filteredProducts) return [];
+        return filteredProducts.map(p => ({
             name: p.name,
             receita: p.salePrice * p.quantitySold,
             custo: p.purchasePrice * p.quantityBought,
         })).filter(d => d.receita > 0 || d.custo > 0);
-    }, [products]);
+    }, [filteredProducts]);
 
     if (isLoading) {
         return (
@@ -71,7 +115,7 @@ export default function ReportsClient() {
 
     return (
         <div className="container mx-auto py-8 px-4 md:px-6">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
                 <div>
                     <h1 className="font-headline text-3xl md:text-4xl font-bold tracking-tight">
                         Relatórios da Loja
@@ -80,6 +124,28 @@ export default function ReportsClient() {
                         Visualize o desempenho dos seus produtos.
                     </p>
                 </div>
+                <div className="flex items-center gap-2">
+                    <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Mês" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableMonths.map(month => (
+                                <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select value={selectedYear} onValueChange={setSelectedYear}>
+                        <SelectTrigger className="w-[120px]">
+                            <SelectValue placeholder="Ano" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableYears.map(year => (
+                                <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
 
             {products && products.length === 0 ? (
@@ -87,15 +153,20 @@ export default function ReportsClient() {
                     <CardTitle className="font-headline text-2xl mb-2">Sem dados para exibir</CardTitle>
                     <CardDescription>Adicione produtos e registre vendas para ver os relatórios.</CardDescription>
                 </Card>
+            ) : filteredProducts.length === 0 ? (
+                <Card className="flex flex-col items-center justify-center p-12 text-center">
+                    <CardTitle className="font-headline text-2xl mb-2">Nenhum dado encontrado</CardTitle>
+                    <CardDescription>Não há dados de vendas para o período selecionado.</CardDescription>
+                </Card>
             ) : (
                 <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
                     <Card>
                         <CardHeader>
                             <CardTitle className="font-headline">Lucro por Produto</CardTitle>
-                            <CardDescription>Lucro líquido total gerado por cada produto vendido.</CardDescription>
+                            <CardDescription>Lucro líquido total gerado por cada produto vendido no período.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+                            <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
                                 <BarChart accessibilityLayer data={profitData}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                     <XAxis dataKey="name" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
@@ -104,7 +175,7 @@ export default function ReportsClient() {
                                         cursor={{ fill: 'hsl(var(--accent) / 0.3)' }}
                                         content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))}/>}
                                     />
-                                    <Bar dataKey="lucro" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="lucro" fill="var(--color-lucro)" radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ChartContainer>
                         </CardContent>
@@ -113,18 +184,18 @@ export default function ReportsClient() {
                     <Card>
                         <CardHeader>
                             <CardTitle className="font-headline">Receita vs. Custo por Produto</CardTitle>
-                            <CardDescription>Comparativo entre receita gerada e custo de aquisição.</CardDescription>
+                            <CardDescription>Comparativo entre receita gerada e custo de aquisição no período.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                           <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+                           <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
                                 <LineChart accessibilityLayer data={revenueCostData}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false}/>
                                     <XAxis dataKey="name" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                                     <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} tickLine={false} axisLine={false}/>
                                     <Tooltip content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))}/>} />
                                     <Legend />
-                                    <Line type="monotone" dataKey="receita" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                                    <Line type="monotone" dataKey="custo" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
+                                    <Line type="monotone" dataKey="receita" stroke="var(--color-receita)" strokeWidth={2} dot={false} />
+                                    <Line type="monotone" dataKey="custo" stroke="var(--color-custo)" strokeWidth={2} dot={false} />
                                 </LineChart>
                             </ChartContainer>
                         </CardContent>
