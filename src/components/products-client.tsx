@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -59,6 +59,7 @@ import { useUser, useFirestore } from '@/firebase';
 import { addDoc, updateDoc, deleteDoc, doc, collection } from 'firebase/firestore';
 import type { Product } from '@/lib/types';
 import { useProducts } from '@/hooks/use-products';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório.'),
@@ -78,14 +79,61 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
+const availableYears = Array.from(new Set(
+    ((): number[] => {
+      const currentYear = new Date().getFullYear();
+      const years: number[] = [];
+      for (let i = 0; i < 5; i++) {
+        years.push(currentYear - i);
+      }
+      return years;
+    })()
+  )).sort((a, b) => b - a);
+
+const availableMonths = [
+    { value: 'all', label: 'Todos os meses' },
+    { value: '0', label: 'Janeiro' },
+    { value: '1', label: 'Fevereiro' },
+    { value: '2', label: 'Março' },
+    { value: '3', label: 'Abril' },
+    { value: '4', label: 'Maio' },
+    { value: '5', label: 'Junho' },
+    { value: '6', label: 'Julho' },
+    { value: '7', label: 'Agosto' },
+    { value: '8', label: 'Setembro' },
+    { value: '9', label: 'Outubro' },
+    { value: '10', label: 'Novembro' },
+    { value: '11', label: 'Dezembro' },
+];
+
 export default function ProductsClient() {
   const { user } = useUser();
   const firestore = useFirestore();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const { toast } = useToast();
+  const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
   
   const { products, isLoading } = useProducts();
+
+  const filteredProducts = useMemo(() => {
+    if (!products) return [];
+    if (selectedMonth === 'all') {
+      return products.filter(p => {
+        if (!p.lastSaleDate) return false;
+        const saleYear = p.lastSaleDate.toDate().getFullYear();
+        return saleYear === parseInt(selectedYear);
+      });
+    }
+    return products.filter((product: Product) => {
+        if (!product.lastSaleDate) return false;
+        const saleDate = product.lastSaleDate.toDate();
+        const yearMatch = saleDate.getFullYear() === parseInt(selectedYear);
+        const monthMatch = saleDate.getMonth() === parseInt(selectedMonth);
+        return yearMatch && monthMatch;
+    });
+}, [products, selectedYear, selectedMonth]);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -201,9 +249,11 @@ export default function ProductsClient() {
   
   if (!user) return null;
 
+  const productsToDisplay = selectedMonth === 'all' && selectedYear === String(new Date().getFullYear()) ? products : filteredProducts;
+
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="font-headline text-3xl md:text-4xl font-bold tracking-tight">
             Gestão de Estoque
@@ -212,7 +262,27 @@ export default function ProductsClient() {
             Gerencie seu inventário de forma fácil e rápida.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Mês" />
+                </SelectTrigger>
+                <SelectContent>
+                    {availableMonths.map(month => (
+                        <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Ano" />
+                </SelectTrigger>
+                <SelectContent>
+                    {availableYears.map(year => (
+                        <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
             <Button onClick={exportToCSV} variant="outline">
                 <FileDown className="mr-2 h-4 w-4" />
                 Exportar CSV
@@ -295,8 +365,8 @@ export default function ProductsClient() {
                         <TableCell><Skeleton className="h-5 w-8 float-right" /></TableCell>
                     </TableRow>
                  ))
-              ) : products && products.length > 0 ? (
-                products.map((product) => {
+              ) : productsToDisplay && productsToDisplay.length > 0 ? (
+                productsToDisplay.map((product) => {
                   const currentStock = (product.quantityPurchased || 0) - (product.quantitySold || 0);
                   return (
                     <TableRow key={product.id}>
@@ -348,7 +418,7 @@ export default function ProductsClient() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center">
-                    Nenhum produto encontrado. Comece adicionando um!
+                    Nenhum produto encontrado para o período selecionado.
                   </TableCell>
                 </TableRow>
               )}
