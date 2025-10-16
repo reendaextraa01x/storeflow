@@ -29,7 +29,7 @@ export default function ReportsClient() {
 
     const productsQuery = useMemoFirebase(() => {
         if (!user) return null;
-        return query(collection(firestore, 'products'), where('userId', '==', user.uid));
+        return collection(firestore, 'users', user.uid, 'products');
     }, [firestore, user]);
 
     const { data: products, isLoading: productsLoading } = useCollection<Product>(productsQuery);

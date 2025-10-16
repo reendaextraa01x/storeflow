@@ -7,7 +7,6 @@ import type { Product } from '@/lib/types';
 import {
   collection,
   query,
-  where,
   onSnapshot,
   addDoc,
   updateDoc,
@@ -91,7 +90,7 @@ export default function ProductsClient() {
 
   const productsQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(firestore, 'products'), where('userId', '==', user.uid));
+    return collection(firestore, 'users', user.uid, 'products');
   }, [firestore, user]);
 
   const { data: products, isLoading: productsLoading } = useCollection<Product>(productsQuery);
@@ -141,11 +140,11 @@ export default function ProductsClient() {
 
     try {
       if (editingProduct) {
-        const productRef = doc(firestore, 'products', editingProduct.id);
+        const productRef = doc(firestore, 'users', user.uid, 'products', editingProduct.id);
         await updateDoc(productRef, { ...data, lastSaleDate: serverTimestamp() });
         toast({ title: 'Produto atualizado com sucesso!' });
       } else {
-        await addDoc(collection(firestore, 'products'), {
+        await addDoc(collection(firestore, 'users', user.uid, 'products'), {
           ...data,
           userId: user.uid,
           lastSaleDate: serverTimestamp(),
@@ -165,8 +164,9 @@ export default function ProductsClient() {
   };
 
   const handleDelete = async (productId: string) => {
+    if(!user) return;
     try {
-        await deleteDoc(doc(firestore, 'products', productId));
+        await deleteDoc(doc(firestore, 'users', user.uid, 'products', productId));
         toast({ title: 'Produto excluído com sucesso!' });
     } catch (error) {
         console.error("Error deleting product: ", error);
