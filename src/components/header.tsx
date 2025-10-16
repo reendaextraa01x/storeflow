@@ -6,6 +6,7 @@ import { Logo } from '@/components/logo';
 import { UserNav } from '@/components/user-nav';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
+import { ThemeToggle } from './theme-toggle';
 
 const navItems = [
   { name: 'Visão Geral', href: '/dashboard' },
@@ -41,7 +42,8 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center justify-end space-x-4">
+        <div className="flex items-center justify-end space-x-2">
+          <ThemeToggle />
           <UserNav />
         </div>
       </div>
