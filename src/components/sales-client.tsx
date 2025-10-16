@@ -1,9 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend, Line, LineChart } from 'recharts';
-import { ChartContainer, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Bar, BarChart, CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis, Legend } from 'recharts';
+import { ChartContainer, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from './ui/skeleton';
 import { useProducts } from '@/context/products-context';
@@ -103,6 +103,17 @@ export default function SalesClient() {
                         <Skeleton className="h-6 w-96" />
                     </div>
                 </div>
+                 <Card>
+                    <CardHeader>
+                        <Skeleton className="h-6 w-48 mb-2"/>
+                        <Skeleton className="h-4 w-64"/>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Skeleton className="h-24 w-full"/>
+                        <Skeleton className="h-24 w-full"/>
+                        <Skeleton className="h-24 w-full"/>
+                    </CardContent>
+                </Card>
                 <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
                     <Card><CardHeader><Skeleton className="h-6 w-48 mb-2"/><Skeleton className="h-4 w-64"/></CardHeader><CardContent><Skeleton className="h-72 w-full"/></CardContent></Card>
                     <Card><CardHeader><Skeleton className="h-6 w-48 mb-2"/><Skeleton className="h-4 w-64"/></CardHeader><CardContent><Skeleton className="h-72 w-full"/></CardContent></Card>
