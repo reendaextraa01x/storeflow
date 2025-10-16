@@ -6,7 +6,7 @@ import { useUser } from '@/firebase';
 import Link from 'next/link';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ArrowRight } from 'lucide-react';
 
 export default function DashboardClient() {
@@ -50,7 +50,7 @@ export default function DashboardClient() {
             )}
             <CardHeader>
               <CardTitle className="font-headline text-2xl flex items-center justify-between">
-                Gerenciar Produtos
+                Gerenciar Estoque
                 <ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
               </CardTitle>
               <CardDescription>Adicione, edite e controle seu inventário.</CardDescription>
@@ -58,7 +58,7 @@ export default function DashboardClient() {
           </Card>
         </Link>
         
-        <Link href="/reports" className="group">
+        <Link href="/sales" className="group">
           <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-primary">
             {reportsImage && (
               <Image
@@ -72,7 +72,7 @@ export default function DashboardClient() {
             )}
             <CardHeader>
               <CardTitle className="font-headline text-2xl flex items-center justify-between">
-                Visualizar Relatórios
+                Analisar Vendas
                 <ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
               </CardTitle>
               <CardDescription>Analise suas vendas e lucros com gráficos interativos.</CardDescription>
