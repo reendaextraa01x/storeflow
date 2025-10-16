@@ -8,11 +8,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Package, AlertCircle } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Product } from '@/lib/types';
-import { startOfDay, startOfMonth, isSameDay, isSameMonth } from 'date-fns';
+import { isSameDay, isSameMonth } from 'date-fns';
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('pt-BR', {
@@ -48,15 +48,26 @@ export default function DashboardClient() {
     return products;
   }, [products, filter]);
 
-  const { totalRevenue, totalCost, totalNetProfit } = useMemo(() => {
-    if (!filteredProducts) return { totalRevenue: 0, totalCost: 0, totalNetProfit: 0 };
+  const { totalRevenue, totalCostOfGoodsSold, totalNetProfit } = useMemo(() => {
+    if (!filteredProducts) return { totalRevenue: 0, totalCostOfGoodsSold: 0, totalNetProfit: 0 };
     
     const revenue = filteredProducts.reduce((acc, p) => acc + (p.salePrice || 0) * (p.quantitySold || 0), 0);
     const costOfGoodsSold = filteredProducts.reduce((acc, p) => acc + (p.purchasePrice || 0) * (p.quantitySold || 0), 0);
     const netProfit = revenue - costOfGoodsSold;
 
-    return { totalRevenue: revenue, totalCost: costOfGoodsSold, totalNetProfit: netProfit };
+    return { totalRevenue: revenue, totalCostOfGoodsSold: costOfGoodsSold, totalNetProfit: netProfit };
   }, [filteredProducts]);
+
+  const { totalInventoryCost, overallBalance, unsoldProducts } = useMemo(() => {
+    if (!products) return { totalInventoryCost: 0, overallBalance: 0, unsoldProducts: [] };
+
+    const inventoryCost = products.reduce((acc, p) => acc + (p.purchasePrice || 0) * (p.quantityPurchased || 0), 0);
+    const totalRevenueAllTime = products.reduce((acc, p) => acc + (p.salePrice || 0) * (p.quantitySold || 0), 0);
+    const balance = totalRevenueAllTime - inventoryCost;
+    const notSold = products.filter(p => (p.quantitySold || 0) === 0);
+
+    return { totalInventoryCost: inventoryCost, overallBalance: balance, unsoldProducts: notSold };
+  }, [products]);
 
 
   if (isUserLoading || !user) {
@@ -84,8 +95,8 @@ export default function DashboardClient() {
 
       <Card className="mb-8">
           <CardHeader>
-              <CardTitle className="font-headline">Resumo Financeiro</CardTitle>
-              <CardDescription>Visão geral das suas finanças com base no período selecionado.</CardDescription>
+              <CardTitle className="font-headline">Resumo Financeiro por Período</CardTitle>
+              <CardDescription>Visão geral das suas finanças com base no período selecionado acima.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {isLoading ? (
@@ -102,7 +113,7 @@ export default function DashboardClient() {
                       </div>
                       <div className="space-y-1 rounded-lg bg-card p-4 border">
                           <p className="text-sm text-muted-foreground">Custo dos Produtos Vendidos</p>
-                          <p className="text-2xl font-bold text-red-600">{formatCurrency(totalCost)}</p>
+                          <p className="text-2xl font-bold text-red-600">{formatCurrency(totalCostOfGoodsSold)}</p>
                       </div>
                       <div className="space-y-1 rounded-lg bg-card p-4 border">
                           <p className="text-sm text-muted-foreground">Lucro Líquido</p>
@@ -112,9 +123,37 @@ export default function DashboardClient() {
               )}
           </CardContent>
       </Card>
+      
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="font-headline">Balanço Geral do Negócio</CardTitle>
+          <CardDescription>Análise do seu investimento total versus o faturamento total.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {isLoading ? (
+            <>
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+            </>
+          ) : (
+            <>
+              <div className="space-y-1 rounded-lg bg-card p-4 border">
+                <p className="text-sm text-muted-foreground">Custo Total do Estoque</p>
+                <p className="text-2xl font-bold">{formatCurrency(totalInventoryCost)}</p>
+              </div>
+              <div className={`space-y-1 rounded-lg p-4 border ${overallBalance < 0 ? 'bg-red-100 dark:bg-red-900/30' : 'bg-green-100 dark:bg-green-900/30'}`}>
+                <p className="text-sm text-muted-foreground">Balanço (Faturamento - Custo Estoque)</p>
+                <p className={`text-2xl font-bold ${overallBalance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {formatCurrency(overallBalance)}
+                </p>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 mb-8">
         <Link href="/products" className="group">
           <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-primary">
             {productsImage && (
@@ -159,6 +198,32 @@ export default function DashboardClient() {
           </Card>
         </Link>
       </div>
+
+      <Card>
+        <CardHeader>
+            <CardTitle className="font-headline">Produtos sem Vendas</CardTitle>
+            <CardDescription>Itens do seu estoque que ainda não tiveram nenhuma unidade vendida.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            {isLoading ? (
+                <Skeleton className="h-24 w-full" />
+            ) : unsoldProducts.length > 0 ? (
+                <ul className="space-y-2">
+                    {unsoldProducts.map(product => (
+                        <li key={product.id} className="flex items-center gap-2 rounded-md border p-3">
+                            <Package className="h-5 w-5 text-muted-foreground" />
+                            <span className="font-medium">{product.name}</span>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <div className="flex flex-col items-center justify-center text-center p-6 border rounded-md">
+                    <p className="font-medium">Tudo certo por aqui!</p>
+                    <p className="text-sm text-muted-foreground">Todos os seus produtos já tiveram vendas registradas.</p>
+                </div>
+            )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

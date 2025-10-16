@@ -25,7 +25,7 @@ const formatCurrency = (value: number) => {
 const chartConfig: ChartConfig = {
     lucro: {
         label: 'Lucro',
-        color: 'hsl(var(--chart-1))',
+        color: 'hsl(var(--chart-2))',
     },
     receita: {
         label: 'Receita',
@@ -94,8 +94,8 @@ export default function SalesClient() {
             if (saleDate.getFullYear() !== parseInt(selectedYear)) return;
 
             const month = format(saleDate, 'MMM', { locale: ptBR });
-            const revenue = product.salePrice * product.quantitySold;
-            const profit = (product.salePrice - product.purchasePrice) * product.quantitySold;
+            const revenue = (product.salePrice || 0) * (product.quantitySold || 0);
+            const profit = ((product.salePrice || 0) - (product.purchasePrice || 0)) * (product.quantitySold || 0);
             
             if (!monthlyData[month]) {
                 monthlyData[month] = { receita: 0, lucro: 0 };
@@ -118,7 +118,7 @@ export default function SalesClient() {
         return filteredProducts
             .map(p => ({
                 name: p.name,
-                quantidade: p.quantitySold,
+                quantidade: p.quantitySold || 0,
             }))
             .filter(p => p.quantidade > 0)
             .sort((a, b) => b.quantidade - a.quantidade)
@@ -129,7 +129,7 @@ export default function SalesClient() {
         if (!filteredProducts) return [];
         return filteredProducts.map(p => ({
             name: p.name,
-            lucro: (p.salePrice - p.purchasePrice) * p.quantitySold,
+            lucro: ((p.salePrice || 0) - (p.purchasePrice || 0)) * (p.quantitySold || 0),
         })).filter(p => p.lucro !== 0).sort((a,b) => b.lucro - a.lucro);
     }, [filteredProducts]);
 
@@ -137,8 +137,8 @@ export default function SalesClient() {
         if (!filteredProducts) return [];
         return filteredProducts.map(p => ({
             name: p.name,
-            receita: p.salePrice * p.quantitySold,
-            custo: p.purchasePrice * p.quantitySold,
+            receita: (p.salePrice || 0) * (p.quantitySold || 0),
+            custo: (p.purchasePrice || 0) * (p.quantitySold || 0),
         })).filter(d => d.receita > 0 || d.custo > 0);
     }, [filteredProducts]);
 
@@ -166,10 +166,10 @@ export default function SalesClient() {
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
                 <div>
                     <h1 className="font-headline text-3xl md:text-4xl font-bold tracking-tight">
-                        Relatórios de Vendas
+                        Análise de Vendas
                     </h1>
                     <p className="text-lg text-muted-foreground">
-                        Visualize o desempenho dos seus produtos.
+                        Visualize o desempenho detalhado dos seus produtos.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -222,7 +222,7 @@ export default function SalesClient() {
                                     <Tooltip content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))}/>} />
                                     <Legend />
                                     <Line type="monotone" dataKey="receita" stroke="var(--color-receita)" strokeWidth={2} dot={false} />
-                                    <Line type="monotone" dataKey="lucro" stroke="var(--color-custo)" strokeWidth={2} dot={false} />
+                                    <Line type="monotone" dataKey="lucro" stroke="var(--color-lucro)" strokeWidth={2} dot={false} />
                                 </LineChart>
                             </ChartContainer>
                         </CardContent>
@@ -251,7 +251,7 @@ export default function SalesClient() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle className="font-headline">Lucro por Produto</CardTitle>
+                            <CardTitle className="font-headline">Produtos Mais Lucrativos</CardTitle>
                             <CardDescription>Lucro líquido total gerado por cada produto vendido no período.</CardDescription>
                         </CardHeader>
                         <CardContent>
