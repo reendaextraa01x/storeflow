@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { useProducts } from '@/context/products-context';
@@ -8,8 +8,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { ArrowRight, DollarSign, ShoppingCart, TrendingUp } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Product } from '@/lib/types';
+import { startOfDay, startOfMonth, isSameDay, isSameMonth } from 'date-fns';
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('pt-BR', {
@@ -20,9 +23,10 @@ const formatCurrency = (value: number) => {
 
 export default function DashboardClient() {
   const { user, isUserLoading } = useUser();
-  const { totalRevenue, totalCost, totalNetProfit, isLoading: productsLoading } = useProducts();
+  const { products, isLoading: productsLoading } = useProducts();
   const router = useRouter();
-  
+  const [filter, setFilter] = useState('all');
+
   const productsImage = PlaceHolderImages.find(p => p.id === 'products-card');
   const reportsImage = PlaceHolderImages.find(p => p.id === 'reports-card');
 
@@ -31,6 +35,29 @@ export default function DashboardClient() {
       router.push('/');
     }
   }, [user, isUserLoading, router]);
+
+  const filteredProducts = useMemo(() => {
+    if (!products) return [];
+    const now = new Date();
+    if (filter === 'today') {
+        return products.filter(p => p.lastSaleDate && isSameDay(p.lastSaleDate.toDate(), now));
+    }
+    if (filter === 'month') {
+        return products.filter(p => p.lastSaleDate && isSameMonth(p.lastSaleDate.toDate(), now));
+    }
+    return products;
+  }, [products, filter]);
+
+  const { totalRevenue, totalCost, totalNetProfit } = useMemo(() => {
+    if (!filteredProducts) return { totalRevenue: 0, totalCost: 0, totalNetProfit: 0 };
+    
+    const revenue = filteredProducts.reduce((acc, p) => acc + (p.salePrice || 0) * (p.quantitySold || 0), 0);
+    const costOfGoodsSold = filteredProducts.reduce((acc, p) => acc + (p.purchasePrice || 0) * (p.quantitySold || 0), 0);
+    const netProfit = revenue - costOfGoodsSold;
+
+    return { totalRevenue: revenue, totalCost: costOfGoodsSold, totalNetProfit: netProfit };
+  }, [filteredProducts]);
+
 
   if (isUserLoading || !user) {
     return null; // Or a loading spinner
@@ -47,10 +74,18 @@ export default function DashboardClient() {
         Aqui está um resumo rápido do seu negócio.
       </p>
 
+      <Tabs defaultValue="all" onValueChange={setFilter} className="mb-8">
+        <TabsList className="grid w-full grid-cols-3 max-w-md">
+            <TabsTrigger value="today">Hoje</TabsTrigger>
+            <TabsTrigger value="month">Este Mês</TabsTrigger>
+            <TabsTrigger value="all">Desde o início</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       <Card className="mb-8">
           <CardHeader>
               <CardTitle className="font-headline">Resumo Financeiro</CardTitle>
-              <CardDescription>Visão geral das suas finanças com base em todas as suas vendas.</CardDescription>
+              <CardDescription>Visão geral das suas finanças com base no período selecionado.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {isLoading ? (
@@ -62,7 +97,7 @@ export default function DashboardClient() {
               ) : (
                   <>
                       <div className="space-y-1 rounded-lg bg-card p-4 border">
-                          <p className="text-sm text-muted-foreground">Faturamento Bruto Total</p>
+                          <p className="text-sm text-muted-foreground">Faturamento Bruto</p>
                           <p className="text-2xl font-bold text-green-600">{formatCurrency(totalRevenue)}</p>
                       </div>
                       <div className="space-y-1 rounded-lg bg-card p-4 border">
@@ -70,7 +105,7 @@ export default function DashboardClient() {
                           <p className="text-2xl font-bold text-red-600">{formatCurrency(totalCost)}</p>
                       </div>
                       <div className="space-y-1 rounded-lg bg-card p-4 border">
-                          <p className="text-sm text-muted-foreground">Lucro Líquido Total</p>
+                          <p className="text-sm text-muted-foreground">Lucro Líquido</p>
                           <p className="text-2xl font-bold text-primary">{formatCurrency(totalNetProfit)}</p>
                       </div>
                   </>
