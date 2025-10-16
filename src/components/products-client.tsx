@@ -19,14 +19,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import {
   DropdownMenu,
@@ -59,7 +55,7 @@ import { MoreHorizontal, PlusCircle, FileDown, Pencil, Trash2 } from 'lucide-rea
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 import { useUser, useFirestore } from '@/firebase';
-import { addDoc, updateDoc, deleteDoc, doc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, updateDoc, deleteDoc, doc, collection } from 'firebase/firestore';
 import type { Product } from '@/lib/types';
 import { useProducts } from '@/context/products-context';
 
@@ -89,7 +85,6 @@ export default function ProductsClient() {
   const { toast } = useToast();
   
   const { products, isLoading } = useProducts();
-  const loading = isLoading;
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -120,7 +115,6 @@ export default function ProductsClient() {
         purchasePrice: 0,
         salePrice: 0,
         quantitySold: 0,
-        lastSaleDate: new Date(),
       });
     }
     setDialogOpen(true);
@@ -133,7 +127,7 @@ export default function ProductsClient() {
       const productData = {
         ...data,
         userId: user.uid,
-        lastSaleDate: data.lastSaleDate || new Date(), // Fallback to current date
+        lastSaleDate: data.quantitySold > (editingProduct?.quantitySold || 0) ? new Date() : editingProduct?.lastSaleDate?.toDate(),
       };
 
       if (editingProduct) {
@@ -288,7 +282,7 @@ export default function ProductsClient() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {isLoading ? (
                  Array.from({length: 3}).map((_, i) => (
                     <TableRow key={i}>
                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
@@ -326,7 +320,7 @@ export default function ProductsClient() {
                                 </DropdownMenuItem>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" className="w-full justify-start p-2 h-8 font-normal text-destructive focus:text-destructive focus:bg-destructive/10">
+                                    <Button variant="ghost" className="w-full justify-start p-2 h-8 font-normal text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10">
                                       <Trash2 className="mr-2 h-4 w-4" />
                                       <span>Excluir</span>
                                     </Button>

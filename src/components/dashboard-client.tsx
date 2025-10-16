@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { useProducts } from '@/context/products-context';
@@ -8,10 +8,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { ArrowRight, Package, AlertCircle } from 'lucide-react';
+import { ArrowRight, Package } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Product } from '@/lib/types';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { isSameDay, isSameMonth } from 'date-fns';
 
 const formatCurrency = (value: number) => {
@@ -109,11 +108,11 @@ export default function DashboardClient() {
                   <>
                       <div className="space-y-1 rounded-lg bg-card p-4 border">
                           <p className="text-sm text-muted-foreground">Faturamento Bruto</p>
-                          <p className="text-2xl font-bold text-green-600">{formatCurrency(totalRevenue)}</p>
+                          <p className="text-2xl font-bold text-chart-1">{formatCurrency(totalRevenue)}</p>
                       </div>
                       <div className="space-y-1 rounded-lg bg-card p-4 border">
                           <p className="text-sm text-muted-foreground">Custo dos Produtos Vendidos</p>
-                          <p className="text-2xl font-bold text-red-600">{formatCurrency(totalCostOfGoodsSold)}</p>
+                          <p className="text-2xl font-bold text-destructive">{formatCurrency(totalCostOfGoodsSold)}</p>
                       </div>
                       <div className="space-y-1 rounded-lg bg-card p-4 border">
                           <p className="text-sm text-muted-foreground">Lucro Líquido</p>
@@ -143,7 +142,7 @@ export default function DashboardClient() {
               </div>
               <div className={`space-y-1 rounded-lg p-4 border ${overallBalance < 0 ? 'bg-red-100 dark:bg-red-900/30' : 'bg-green-100 dark:bg-green-900/30'}`}>
                 <p className="text-sm text-muted-foreground">Balanço (Faturamento - Custo Estoque)</p>
-                <p className={`text-2xl font-bold ${overallBalance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                <p className={`text-2xl font-bold ${overallBalance < 0 ? 'text-destructive' : 'text-chart-1'}`}>
                   {formatCurrency(overallBalance)}
                 </p>
               </div>
