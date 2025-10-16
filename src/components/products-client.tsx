@@ -177,15 +177,15 @@ export default function ProductsClient() {
     const csvRows = [headers.join(',')];
 
     for (const product of products) {
-        const individualProfit = product.salePrice - product.purchasePrice;
-        const totalProfit = individualProfit * product.quantitySold;
-        const currentStock = product.quantityPurchased - product.quantitySold;
+        const individualProfit = (product.salePrice || 0) - (product.purchasePrice || 0);
+        const totalProfit = individualProfit * (product.quantitySold || 0);
+        const currentStock = (product.quantityPurchased || 0) - (product.quantitySold || 0);
         const values = [
             `"${product.name}"`,
-            product.quantityPurchased,
-            product.purchasePrice,
-            product.salePrice,
-            product.quantitySold,
+            product.quantityPurchased || 0,
+            product.purchasePrice || 0,
+            product.salePrice || 0,
+            product.quantitySold || 0,
             currentStock,
             individualProfit.toFixed(2),
             totalProfit.toFixed(2),
@@ -302,15 +302,15 @@ export default function ProductsClient() {
                  ))
               ) : products && products.length > 0 ? (
                 products.map((product) => {
-                  const currentStock = product.quantityPurchased - product.quantitySold;
+                  const currentStock = (product.quantityPurchased || 0) - (product.quantitySold || 0);
                   return (
                     <TableRow key={product.id}>
                       <TableCell className="font-medium">{product.name}</TableCell>
-                      <TableCell className="text-right">{product.quantityPurchased}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(product.purchasePrice)}</TableCell>
-                      <TableCell className="text-right">{product.quantitySold}</TableCell>
+                      <TableCell className="text-right">{product.quantityPurchased || 0}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(product.purchasePrice || 0)}</TableCell>
+                      <TableCell className="text-right">{product.quantitySold || 0}</TableCell>
                       <TableCell className="text-right font-semibold">{currentStock}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(product.salePrice)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(product.salePrice || 0)}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
