@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 
 const navItems = [
-  { name: 'Dashboard', href: '/dashboard' },
+  { name: 'Visão Geral', href: '/dashboard' },
   { name: 'Estoque', href: '/products' },
   { name: 'Vendas', href: '/sales' },
 ];

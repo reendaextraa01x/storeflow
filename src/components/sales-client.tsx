@@ -62,7 +62,7 @@ const availableMonths = [
 ];
 
 export default function SalesClient() {
-    const { products, isLoading, totalRevenue, totalCost, totalNetProfit } = useProducts();
+    const { products, isLoading } = useProducts();
     const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
     const [selectedMonth, setSelectedMonth] = useState<string>('all');
 
@@ -90,7 +90,7 @@ export default function SalesClient() {
         return filteredProducts.map(p => ({
             name: p.name,
             receita: p.salePrice * p.quantitySold,
-            custo: p.purchasePrice * p.quantityPurchased,
+            custo: p.purchasePrice * p.quantitySold,
         })).filter(d => d.receita > 0 || d.custo > 0);
     }, [filteredProducts]);
 
@@ -103,17 +103,6 @@ export default function SalesClient() {
                         <Skeleton className="h-6 w-96" />
                     </div>
                 </div>
-                 <Card>
-                    <CardHeader>
-                        <Skeleton className="h-6 w-48 mb-2"/>
-                        <Skeleton className="h-4 w-64"/>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Skeleton className="h-24 w-full"/>
-                        <Skeleton className="h-24 w-full"/>
-                        <Skeleton className="h-24 w-full"/>
-                    </CardContent>
-                </Card>
                 <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
                     <Card><CardHeader><Skeleton className="h-6 w-48 mb-2"/><Skeleton className="h-4 w-64"/></CardHeader><CardContent><Skeleton className="h-72 w-full"/></CardContent></Card>
                     <Card><CardHeader><Skeleton className="h-6 w-48 mb-2"/><Skeleton className="h-4 w-64"/></CardHeader><CardContent><Skeleton className="h-72 w-full"/></CardContent></Card>
@@ -157,27 +146,6 @@ export default function SalesClient() {
                 </div>
             </div>
 
-            <Card className="mb-8">
-                <CardHeader>
-                    <CardTitle className="font-headline">Resumo Financeiro</CardTitle>
-                    <CardDescription>Visão geral das suas finanças com base nos filtros selecionados.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-1 rounded-lg bg-card p-4 border">
-                        <p className="text-sm text-muted-foreground">Faturamento Bruto Total</p>
-                        <p className="text-2xl font-bold text-green-600">{formatCurrency(totalRevenue)}</p>
-                    </div>
-                    <div className="space-y-1 rounded-lg bg-card p-4 border">
-                        <p className="text-sm text-muted-foreground">Custo Total do Inventário</p>
-                        <p className="text-2xl font-bold text-red-600">{formatCurrency(totalCost)}</p>
-                    </div>
-                    <div className="space-y-1 rounded-lg bg-card p-4 border">
-                        <p className="text-sm text-muted-foreground">Lucro Líquido Total</p>
-                        <p className="text-2xl font-bold text-primary">{formatCurrency(totalNetProfit)}</p>
-                    </div>
-                </CardContent>
-            </Card>
-
             {products && products.length === 0 ? (
                 <Card className="flex flex-col items-center justify-center p-12 text-center">
                     <CardTitle className="font-headline text-2xl mb-2">Sem dados para exibir</CardTitle>
@@ -214,7 +182,7 @@ export default function SalesClient() {
                     <Card>
                         <CardHeader>
                             <CardTitle className="font-headline">Receita vs. Custo por Produto</CardTitle>
-                            <CardDescription>Comparativo entre receita gerada e custo de aquisição no período.</CardDescription>
+                            <CardDescription>Comparativo entre receita gerada e custo dos produtos vendidos no período.</CardDescription>
                         </CardHeader>
                         <CardContent>
                            <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
