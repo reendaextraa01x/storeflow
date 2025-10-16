@@ -31,7 +31,7 @@
     --radius: 0.5rem;
   }
 
-  .dark {
+  .dark:not(.simple-dark) {
     --background: 224 71.4% 4.1%;
     --foreground: 210 20% 98%;
     --card: 224 71.4% 5.1%;
@@ -58,7 +58,7 @@
     --chart-5: 43 74% 66%;
   }
 
-  .super-dark {
+  .simple-dark {
     --background: 224 71.4% 4.1%;
     --foreground: 210 20% 98%;
     --card: 224 71.4% 5.1%;
@@ -95,16 +95,21 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  .super-dark body {
+  
+  .dark:not(.simple-dark) body {
     background: linear-gradient(-45deg, hsl(224, 71.4%, 4.1%), hsl(220, 40%, 8%), hsl(200, 50%, 10%), hsl(224, 71.4%, 4.1%));
     background-size: 400% 400%;
     animation: gradient 15s ease infinite;
   }
 
-  .super-dark .card {
+  .dark:not(.simple-dark) .card {
     background-color: hsla(224, 71%, 5%, 0.8);
     backdrop-filter: blur(10px);
     border-color: hsla(215, 28%, 17%, 0.5);
+  }
+
+  .simple-dark body {
+    background-color: hsl(var(--background));
   }
 }
 

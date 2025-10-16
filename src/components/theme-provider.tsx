@@ -9,10 +9,11 @@ function ThemeEffect() {
 
   React.useEffect(() => {
     const body = document.body;
-    body.classList.remove('super-dark');
+    body.classList.remove('simple-dark');
 
     if (theme === 'dark') {
-      body.classList.add('super-dark');
+      // Use um nome de classe específico para o tema escuro simples
+      body.classList.add('simple-dark');
     }
   }, [theme]);
 
