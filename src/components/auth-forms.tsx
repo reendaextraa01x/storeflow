@@ -5,11 +5,8 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import {
-  signInWithEmailAndPassword,
-} from 'firebase/auth';
-import { useAuth } from '@/hooks/use-auth';
-import { auth } from '@/lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useUser, useAuth } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -33,7 +30,8 @@ const authSchema = z.object({
 
 export function LoginForm() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useUser();
+  const auth = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 

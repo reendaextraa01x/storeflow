@@ -2,14 +2,14 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
-import { db } from '@/lib/firebase';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Product } from '@/lib/types';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend, Line, LineChart } from 'recharts';
 import { ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from './ui/skeleton';
+import { useCollection } from '@/firebase';
 
 
 const formatCurrency = (value: number) => {
@@ -23,40 +23,26 @@ const formatCurrency = (value: number) => {
 };
 
 export default function ReportsClient() {
-    const { user, loading: authLoading } = useAuth();
+    const { user, isUserLoading } = useUser();
+    const firestore = useFirestore();
     const router = useRouter();
-    const [products, setProducts] = useState<Product[]>([]);
-    const [loading, setLoading] = useState(true);
+
+    const productsQuery = useMemoFirebase(() => {
+        if (!user) return null;
+        return query(collection(firestore, 'products'), where('userId', '==', user.uid));
+    }, [firestore, user]);
+
+    const { data: products, isLoading: productsLoading } = useCollection<Product>(productsQuery);
+    const loading = isUserLoading || productsLoading;
 
     useEffect(() => {
-        if (!authLoading && !user) {
+        if (!isUserLoading && !user) {
             router.push('/');
         }
-    }, [user, authLoading, router]);
-
-    useEffect(() => {
-        if (user) {
-            const q = query(collection(db, 'products'), where('userId', '==', user.uid));
-            const unsubscribe = onSnapshot(
-                q,
-                (querySnapshot) => {
-                    const productsData: Product[] = [];
-                    querySnapshot.forEach((doc) => {
-                        productsData.push({ id: doc.id, ...doc.data() } as Product);
-                    });
-                    setProducts(productsData);
-                    setLoading(false);
-                },
-                (error) => {
-                    console.error('Error fetching products: ', error);
-                    setLoading(false);
-                }
-            );
-            return () => unsubscribe();
-        }
-    }, [user]);
+    }, [user, isUserLoading, router]);
 
     const profitData = useMemo(() => {
+        if (!products) return [];
         return products.map(p => ({
             name: p.name,
             lucro: (p.salePrice - p.purchasePrice) * p.quantitySold,
@@ -64,14 +50,13 @@ export default function ReportsClient() {
     }, [products]);
 
     const revenueCostData = useMemo(() => {
+        if (!products) return [];
         return products.map(p => ({
             name: p.name,
             receita: p.salePrice * p.quantitySold,
             custo: p.purchasePrice * p.quantityBought,
         })).filter(d => d.receita > 0 || d.custo > 0);
     }, [products]);
-
-    if (authLoading) return null;
 
     if (loading) {
         return (
@@ -103,7 +88,7 @@ export default function ReportsClient() {
                 </div>
             </div>
 
-            {products.length === 0 ? (
+            {products && products.length === 0 ? (
                 <Card className="flex flex-col items-center justify-center p-12 text-center">
                     <CardTitle className="font-headline text-2xl mb-2">Sem dados para exibir</CardTitle>
                     <CardDescription>Adicione produtos e registre vendas para ver os relatórios.</CardDescription>

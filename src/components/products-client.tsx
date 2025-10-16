@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
-import { db } from '@/lib/firebase';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Product } from '@/lib/types';
 import {
   collection,
@@ -63,6 +62,7 @@ import * as z from 'zod';
 import { MoreHorizontal, PlusCircle, FileDown, Pencil, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
+import { useCollection } from '@/firebase';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório.'),
@@ -82,13 +82,20 @@ const formatCurrency = (value: number) => {
 };
 
 export default function ProductsClient() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const router = useRouter();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const { toast } = useToast();
+
+  const productsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'products'), where('userId', '==', user.uid));
+  }, [firestore, user]);
+
+  const { data: products, isLoading: productsLoading } = useCollection<Product>(productsQuery);
+  const loading = isUserLoading || productsLoading;
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -102,42 +109,21 @@ export default function ProductsClient() {
   });
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!isUserLoading && !user) {
       router.push('/');
     }
-  }, [user, authLoading, router]);
+  }, [user, isUserLoading, router]);
 
-  useEffect(() => {
-    if (user) {
-      const q = query(collection(db, 'products'), where('userId', '==', user.uid));
-      const unsubscribe = onSnapshot(
-        q,
-        (querySnapshot) => {
-          const productsData: Product[] = [];
-          querySnapshot.forEach((doc) => {
-            productsData.push({ id: doc.id, ...doc.data() } as Product);
-          });
-          setProducts(productsData);
-          setLoading(false);
-        },
-        (error) => {
-          console.error('Error fetching products: ', error);
-          setLoading(false);
-          toast({
-            variant: "destructive",
-            title: "Erro ao buscar produtos",
-            description: "Não foi possível carregar os dados. Tente recarregar a página."
-          })
-        }
-      );
-      return () => unsubscribe();
-    }
-  }, [user, toast]);
-  
   const handleOpenDialog = (product: Product | null = null) => {
     setEditingProduct(product);
     if (product) {
-      form.reset(product);
+      form.reset({
+        name: product.name,
+        quantityBought: product.quantityBought,
+        purchasePrice: product.purchasePrice,
+        salePrice: product.salePrice,
+        quantitySold: product.quantitySold,
+      });
     } else {
       form.reset({
         name: '',
@@ -155,11 +141,11 @@ export default function ProductsClient() {
 
     try {
       if (editingProduct) {
-        const productRef = doc(db, 'products', editingProduct.id);
+        const productRef = doc(firestore, 'products', editingProduct.id);
         await updateDoc(productRef, { ...data, lastSaleDate: serverTimestamp() });
         toast({ title: 'Produto atualizado com sucesso!' });
       } else {
-        await addDoc(collection(db, 'products'), {
+        await addDoc(collection(firestore, 'products'), {
           ...data,
           userId: user.uid,
           lastSaleDate: serverTimestamp(),
@@ -180,7 +166,7 @@ export default function ProductsClient() {
 
   const handleDelete = async (productId: string) => {
     try {
-        await deleteDoc(doc(db, 'products', productId));
+        await deleteDoc(doc(firestore, 'products', productId));
         toast({ title: 'Produto excluído com sucesso!' });
     } catch (error) {
         console.error("Error deleting product: ", error);
@@ -193,6 +179,7 @@ export default function ProductsClient() {
   }
 
   const exportToCSV = () => {
+    if (!products) return;
     const headers = ['Nome', 'Qtd. Comprada', 'Valor Compra (Unit)', 'Valor Venda (Unit)', 'Qtd. Vendida', 'Lucro Individual', 'Lucro Total'];
     const csvRows = [headers.join(',')];
 
@@ -223,6 +210,7 @@ export default function ProductsClient() {
   };
 
   const { totalRevenue, totalCost, totalNetProfit } = useMemo(() => {
+    if (!products) return { totalRevenue: 0, totalCost: 0, totalNetProfit: 0 };
     const totalRevenue = products.reduce(
       (acc, p) => acc + p.salePrice * p.quantitySold,
       0
@@ -239,7 +227,7 @@ export default function ProductsClient() {
   }, [products]);
 
 
-  if (authLoading) return null;
+  if (isUserLoading) return null;
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
@@ -335,7 +323,7 @@ export default function ProductsClient() {
                         <TableCell><Skeleton className="h-5 w-8 float-right" /></TableCell>
                     </TableRow>
                  ))
-              ) : products.length > 0 ? (
+              ) : products && products.length > 0 ? (
                 products.map((product) => {
                   const profit = product.salePrice - product.purchasePrice;
                   return (
