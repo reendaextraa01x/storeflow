@@ -104,3 +104,4 @@ npm run dev
 ```
 
 Open [http://localhost:9002](http://localhost:9002) (or the port specified in your terminal) with your browser to see the result. You should be able to sign up for a new account and start using the dashboard.
+# plataforma
