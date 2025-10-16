@@ -11,6 +11,7 @@ interface ProductsContextType {
   error: Error | null;
   totalRevenue: number;
   totalCost: number;
+  totalGrossProfit: number;
   totalNetProfit: number;
 }
 
@@ -27,14 +28,17 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const { data: products, isLoading: productsLoading, error } = useCollection<Product>(productsQuery);
 
-  const { totalRevenue, totalCost, totalNetProfit } = useMemo(() => {
-    if (!products) return { totalRevenue: 0, totalCost: 0, totalNetProfit: 0 };
+  const { totalRevenue, totalCost, totalGrossProfit, totalNetProfit } = useMemo(() => {
+    if (!products) return { totalRevenue: 0, totalCost: 0, totalGrossProfit: 0, totalNetProfit: 0 };
     
     const revenue = products.reduce((acc, p) => acc + p.salePrice * p.quantitySold, 0);
-    const cost = products.reduce((acc, p) => acc + p.purchasePrice * p.quantityBought, 0);
-    const netProfit = revenue - cost;
+    const costOfGoodsSold = products.reduce((acc, p) => acc + p.purchasePrice * p.quantitySold, 0);
+    const totalCostOfInventory = products.reduce((acc, p) => acc + p.purchasePrice * p.quantityBought, 0);
 
-    return { totalRevenue: revenue, totalCost: cost, totalNetProfit: netProfit };
+    const grossProfit = revenue - costOfGoodsSold;
+    const netProfit = revenue - totalCostOfInventory;
+
+    return { totalRevenue: revenue, totalCost: totalCostOfInventory, totalGrossProfit: grossProfit, totalNetProfit: netProfit };
   }, [products]);
 
   const value = {
@@ -43,6 +47,7 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
     error,
     totalRevenue,
     totalCost,
+    totalGrossProfit,
     totalNetProfit,
   };
 

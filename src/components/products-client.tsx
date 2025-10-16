@@ -77,7 +77,7 @@ export default function ProductsClient() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const { toast } = useToast();
   
-  const { products, isLoading, totalRevenue, totalCost, totalNetProfit } = useProducts();
+  const { products, isLoading, totalRevenue, totalCost, totalGrossProfit, totalNetProfit } = useProducts();
   const loading = isLoading;
 
   const form = useForm<ProductFormData>({
@@ -332,14 +332,18 @@ export default function ProductsClient() {
             </TableBody>
           </Table>
         </CardContent>
-        <CardFooter className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t px-6 py-4 mt-4">
+        <CardFooter className="grid grid-cols-1 md:grid-cols-4 gap-4 border-t px-6 py-4 mt-4">
             <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Faturamento Bruto Total</p>
                 <p className="text-2xl font-bold text-green-600">{formatCurrency(totalRevenue)}</p>
             </div>
             <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Custo Total</p>
+                <p className="text-sm text-muted-foreground">Custo Total do Inventário</p>
                 <p className="text-2xl font-bold text-red-600">{formatCurrency(totalCost)}</p>
+            </div>
+             <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Lucro Bruto Total</p>
+                <p className="text-2xl font-bold">{formatCurrency(totalGrossProfit)}</p>
             </div>
             <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Lucro Líquido Total</p>
