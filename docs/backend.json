@@ -1,0 +1,178 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the StoreFlow application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "email"
+      ]
+    },
+    "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a product in the store's inventory.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the product entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Product)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the product."
+        },
+        "quantityPurchased": {
+          "type": "number",
+          "description": "Total quantity of the product purchased."
+        },
+        "purchasePrice": {
+          "type": "number",
+          "description": "Unit price at which the product was purchased."
+        },
+        "salePrice": {
+          "type": "number",
+          "description": "Unit price at which the product is sold."
+        },
+        "quantitySold": {
+          "type": "number",
+          "description": "Total quantity of the product sold."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "quantityPurchased",
+        "purchasePrice",
+        "salePrice",
+        "quantitySold"
+      ]
+    },
+    "Sale": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Sale",
+      "type": "object",
+      "description": "Represents a sale transaction.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the sale transaction."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Sale)"
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product. (Relationship: Product 1:N Sale)"
+        },
+        "saleDate": {
+          "type": "string",
+          "description": "Date of the sale.",
+          "format": "date-time"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the product sold in this transaction."
+        },
+        "unitPrice": {
+          "type": "number",
+          "description": "Price per unit at which the product was sold."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "productId",
+        "saleDate",
+        "quantity",
+        "unitPrice"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Collection for storing user profiles.  Each document represents a user of the StoreFlow application.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user, corresponding to their Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/products/{productId}",
+        "definition": {
+          "entityName": "Product",
+          "schema": {
+            "$ref": "#/backend/entities/Product"
+          },
+          "description": "Collection for storing products owned by a specific user. Each document represents a product in the user's inventory.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user, corresponding to their Firebase Auth UID."
+            },
+            {
+              "name": "productId",
+              "description": "The unique identifier for the product."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/sales/{saleId}",
+        "definition": {
+          "entityName": "Sale",
+          "schema": {
+            "$ref": "#/backend/entities/Sale"
+          },
+          "description": "Collection for storing sale transactions associated with a specific user. Each document represents a sale record.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user, corresponding to their Firebase Auth UID."
+            },
+            {
+              "name": "saleId",
+              "description": "The unique identifier for the sale transaction."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to secure user data, facilitate efficient queries, and maintain data integrity for the StoreFlow application.  The core principle is Authorization Independence, achieved through path-based ownership.  This eliminates the need for `get()` calls in security rules, simplifying rules and enabling atomic operations.\n\n1.  **User-Owned Data**: All data (products, sales) is stored under the `/users/{userId}` path. This ensures that only the authenticated user can access their own data, guaranteeing data privacy and simplifying security rules.\n2.  **Homogeneous Security Posture:** Each top-level collection (`/users/{userId}/products`, `/users/{userId}/sales`) contains only documents with the same access control requirements, aligning with structural segregation. This simplifies security rule definitions as all documents within a collection have a uniform access posture.\n\n**Authorization Independence (Strategy A)**:\n\n*   Each product and sale document is located under `/users/{userId}`. This avoids the need to query parent documents to determine authorization because the `request.auth.uid` matches the `{userId}` path parameter. This eliminates `get()` calls in the rules.\n\n**QAPs (Rules Are Not Filters)**: The data structure supports secure `list` operations. Because all data is namespaced under `/users/{userId}`, listing products or sales is inherently restricted to the authenticated user. Thus, a user can only list data they own."
+  }
+}
