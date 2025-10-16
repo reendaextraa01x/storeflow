@@ -58,7 +58,7 @@ import { Skeleton } from './ui/skeleton';
 import { useUser, useFirestore } from '@/firebase';
 import { addDoc, updateDoc, deleteDoc, doc, collection } from 'firebase/firestore';
 import type { Product } from '@/lib/types';
-import { useProducts } from '@/context/products-context';
+import { useProducts } from '@/hooks/use-products';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório.'),
