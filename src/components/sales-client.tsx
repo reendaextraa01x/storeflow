@@ -8,6 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from './ui/skeleton';
 import { useProducts } from '@/context/products-context';
 import type { Product } from '@/lib/types';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
 
 const formatCurrency = (value: number) => {
     if (Math.abs(value) >= 1000) {
@@ -31,6 +34,10 @@ const chartConfig: ChartConfig = {
     custo: {
         label: 'Custo',
         color: 'hsl(var(--chart-2))',
+    },
+    quantidade: {
+        label: 'Quantidade Vendida',
+        color: 'hsl(var(--chart-1))',
     },
 };
 
@@ -77,6 +84,47 @@ export default function SalesClient() {
         });
     }, [products, selectedYear, selectedMonth]);
 
+    const monthlySalesData = useMemo(() => {
+        if (!products) return [];
+        const monthlyData: { [key: string]: { receita: number, lucro: number } } = {};
+
+        products.forEach(product => {
+            if (!product.lastSaleDate) return;
+            const saleDate = product.lastSaleDate.toDate();
+            if (saleDate.getFullYear() !== parseInt(selectedYear)) return;
+
+            const month = format(saleDate, 'MMM', { locale: ptBR });
+            const revenue = product.salePrice * product.quantitySold;
+            const profit = (product.salePrice - product.purchasePrice) * product.quantitySold;
+            
+            if (!monthlyData[month]) {
+                monthlyData[month] = { receita: 0, lucro: 0 };
+            }
+            monthlyData[month].receita += revenue;
+            monthlyData[month].lucro += profit;
+        });
+
+        const monthOrder = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+        return monthOrder.map(month => ({
+            name: month.charAt(0).toUpperCase() + month.slice(1),
+            receita: monthlyData[month]?.receita || 0,
+            lucro: monthlyData[month]?.lucro || 0,
+        }));
+    }, [products, selectedYear]);
+
+    const topSellingProducts = useMemo(() => {
+        if (!filteredProducts) return [];
+        return filteredProducts
+            .map(p => ({
+                name: p.name,
+                quantidade: p.quantitySold,
+            }))
+            .filter(p => p.quantidade > 0)
+            .sort((a, b) => b.quantidade - a.quantidade)
+            .slice(0, 10); 
+    }, [filteredProducts]);
+
     const profitData = useMemo(() => {
         if (!filteredProducts) return [];
         return filteredProducts.map(p => ({
@@ -104,6 +152,8 @@ export default function SalesClient() {
                     </div>
                 </div>
                 <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+                    <Card><CardHeader><Skeleton className="h-6 w-48 mb-2"/><Skeleton className="h-4 w-64"/></CardHeader><CardContent><Skeleton className="h-72 w-full"/></CardContent></Card>
+                    <Card><CardHeader><Skeleton className="h-6 w-48 mb-2"/><Skeleton className="h-4 w-64"/></CardHeader><CardContent><Skeleton className="h-72 w-full"/></CardContent></Card>
                     <Card><CardHeader><Skeleton className="h-6 w-48 mb-2"/><Skeleton className="h-4 w-64"/></CardHeader><CardContent><Skeleton className="h-72 w-full"/></CardContent></Card>
                     <Card><CardHeader><Skeleton className="h-6 w-48 mb-2"/><Skeleton className="h-4 w-64"/></CardHeader><CardContent><Skeleton className="h-72 w-full"/></CardContent></Card>
                 </div>
@@ -151,13 +201,54 @@ export default function SalesClient() {
                     <CardTitle className="font-headline text-2xl mb-2">Sem dados para exibir</CardTitle>
                     <CardDescription>Adicione produtos e registre vendas para ver os relatórios.</CardDescription>
                 </Card>
-            ) : filteredProducts.length === 0 ? (
+            ) : filteredProducts.length === 0 && monthlySalesData.every(m => m.receita === 0) ? (
                 <Card className="flex flex-col items-center justify-center p-12 text-center">
                     <CardTitle className="font-headline text-2xl mb-2">Nenhum dado encontrado</CardTitle>
                     <CardDescription>Não há dados de vendas para o período selecionado.</CardDescription>
                 </Card>
             ) : (
                 <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="font-headline">Tendência de Vendas ({selectedYear})</CardTitle>
+                            <CardDescription>Receita e lucro gerados mensalmente ao longo do ano.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                           <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+                                <LineChart accessibilityLayer data={monthlySalesData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false}/>
+                                    <XAxis dataKey="name" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                                    <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} tickLine={false} axisLine={false}/>
+                                    <Tooltip content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))}/>} />
+                                    <Legend />
+                                    <Line type="monotone" dataKey="receita" stroke="var(--color-receita)" strokeWidth={2} dot={false} />
+                                    <Line type="monotone" dataKey="lucro" stroke="var(--color-custo)" strokeWidth={2} dot={false} />
+                                </LineChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="font-headline">Produtos Mais Vendidos</CardTitle>
+                            <CardDescription>Produtos com maior quantidade de unidades vendidas no período.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+                                <BarChart accessibilityLayer data={topSellingProducts} layout="vertical">
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                                    <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} width={100} />
+                                    <XAxis type="number" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                                    <Tooltip
+                                        cursor={{ fill: 'hsl(var(--accent) / 0.3)' }}
+                                        content={<ChartTooltipContent />}
+                                    />
+                                    <Bar dataKey="quantidade" name="Quantidade" fill="var(--color-quantidade)" radius={[0, 4, 4, 0]} />
+                                </BarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+
                     <Card>
                         <CardHeader>
                             <CardTitle className="font-headline">Lucro por Produto</CardTitle>
