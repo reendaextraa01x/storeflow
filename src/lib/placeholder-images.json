@@ -1,3 +1,16 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "products-card",
+      "description": "An image showing a warehouse with shelves of products.",
+      "imageUrl": "https://picsum.photos/seed/products/600/400",
+      "imageHint": "warehouse products"
+    },
+    {
+      "id": "reports-card",
+      "description": "An image of charts and graphs on a screen.",
+      "imageUrl": "https://picsum.photos/seed/reports/600/400",
+      "imageHint": "charts graphs"
+    }
+  ]
 }

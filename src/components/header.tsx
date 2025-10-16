@@ -1,0 +1,50 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Logo } from '@/components/logo';
+import { UserNav } from '@/components/user-nav';
+import { cn } from '@/lib/utils';
+import { Button } from './ui/button';
+
+const navItems = [
+  { name: 'Dashboard', href: '/dashboard' },
+  { name: 'Produtos', href: '/products' },
+  { name: 'Relatórios', href: '/reports' },
+];
+
+export function Header() {
+  const pathname = usePathname();
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-card/80 backdrop-blur-sm">
+      <div className="container flex h-16 items-center">
+        <div className="mr-4 hidden md:flex">
+          <Logo />
+        </div>
+
+        <nav className="flex flex-1 items-center space-x-2 lg:space-x-4">
+          {navItems.map((item) => (
+            <Button asChild variant="ghost" key={item.href}>
+              <Link
+                href={item.href}
+                className={cn(
+                  'text-sm font-medium transition-colors hover:text-primary',
+                  pathname === item.href
+                    ? 'text-primary'
+                    : 'text-muted-foreground'
+                )}
+              >
+                {item.name}
+              </Link>
+            </Button>
+          ))}
+        </nav>
+
+        <div className="flex items-center justify-end space-x-4">
+          <UserNav />
+        </div>
+      </div>
+    </header>
+  );
+}
