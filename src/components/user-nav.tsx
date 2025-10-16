@@ -15,17 +15,28 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from './ui/button';
+import { Skeleton } from './ui/skeleton';
+import { useEffect, useState } from 'react';
 
 export function UserNav() {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut(auth);
     router.push('/');
   };
 
+  if (isUserLoading || !isClient) {
+    return <Skeleton className="h-8 w-8 rounded-full" />;
+  }
+  
   if (!user) return null;
 
   return (
