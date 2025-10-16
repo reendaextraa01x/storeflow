@@ -104,6 +104,38 @@ npm run dev
 ```
 
 Open [http://localhost:9002](http://localhost:9002) (or the port specified in your terminal) with your browser to see the result. You should be able to sign up for a new account and start using the dashboard.
+
+---
+
+## Deployment
+
+This project is configured for deployment on **Firebase App Hosting**. It is not configured for Netlify.
+
+Follow these steps to deploy your application:
+
+### 1. Push Your Code to GitHub
+
+Make sure all your latest code is pushed to a repository on your GitHub account.
+
+### 2. Connect to Firebase App Hosting
+
+1.  **Go to the Firebase Console**:
+    -   Navigate to [https://console.firebase.google.com/](https://console.firebase.google.com/) and select your project.
+
+2.  **Navigate to App Hosting**:
+    -   In the left-hand menu, go to the **Build** > **App Hosting** section.
+
+3.  **Create a Backend**:
+    -   Click "**Get started**" and follow the prompts to connect your GitHub account.
+    -   Authorize Firebase to access your repositories.
+    -   Select the GitHub repository for your StoreFlow project.
+    -   Follow the on-screen instructions to create your "backend". Firebase will automatically detect the `apphosting.yaml` file and configure the build settings.
+
+4.  **Deploy**:
+    -   Once the backend is created, Firebase App Hosting will automatically build and deploy your application.
+    -   You will be provided with a live URL for your deployed application.
+
+Any future pushes to your main branch on GitHub will automatically trigger a new deployment.
 # plataforma
 # plataforma
 # plataforma
