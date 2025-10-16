@@ -66,7 +66,7 @@ import { useProducts } from '@/context/products-context';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório.'),
-  quantityBought: z.coerce.number().min(0, 'Deve ser positivo.'),
+  quantityPurchased: z.coerce.number().min(0, 'Deve ser positivo.'),
   purchasePrice: z.coerce.number().min(0, 'Deve ser positivo.'),
   salePrice: z.coerce.number().min(0, 'Deve ser positivo.'),
   quantitySold: z.coerce.number().min(0, 'Deve ser positivo.'),
@@ -96,7 +96,7 @@ export default function ProductsClient() {
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '',
-      quantityBought: 0,
+      quantityPurchased: 0,
       purchasePrice: 0,
       salePrice: 0,
       quantitySold: 0,
@@ -108,7 +108,7 @@ export default function ProductsClient() {
     if (product) {
       form.reset({
         name: product.name,
-        quantityBought: product.quantityBought,
+        quantityPurchased: product.quantityPurchased,
         purchasePrice: product.purchasePrice,
         salePrice: product.salePrice,
         quantitySold: product.quantitySold,
@@ -117,7 +117,7 @@ export default function ProductsClient() {
     } else {
       form.reset({
         name: '',
-        quantityBought: 0,
+        quantityPurchased: 0,
         purchasePrice: 0,
         salePrice: 0,
         quantitySold: 0,
@@ -184,7 +184,7 @@ export default function ProductsClient() {
         const totalProfit = individualProfit * product.quantitySold;
         const values = [
             `"${product.name}"`,
-            product.quantityBought,
+            product.quantityPurchased,
             product.purchasePrice,
             product.salePrice,
             product.quantitySold,
@@ -247,7 +247,7 @@ export default function ProductsClient() {
                       <FormItem><FormLabel>Nome do produto</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                      <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name="quantityBought" render={({ field }) => (
+                        <FormField control={form.control} name="quantityPurchased" render={({ field }) => (
                             <FormItem><FormLabel>Qtd. comprada</FormLabel><FormControl><Input type="number" step="1" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField control={form.control} name="purchasePrice" render={({ field }) => (
@@ -307,7 +307,7 @@ export default function ProductsClient() {
                   return (
                     <TableRow key={product.id}>
                       <TableCell className="font-medium">{product.name}</TableCell>
-                      <TableCell className="text-right">{product.quantityBought}</TableCell>
+                      <TableCell className="text-right">{product.quantityPurchased}</TableCell>
                       <TableCell className="text-right">{formatCurrency(product.purchasePrice)}</TableCell>
                       <TableCell className="text-right">{product.quantitySold}</TableCell>
                       <TableCell className="text-right">{formatCurrency(product.salePrice)}</TableCell>

@@ -34,7 +34,7 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
     const revenue = products.reduce((acc, p) => acc + p.salePrice * p.quantitySold, 0);
 
     // Custo Total do Inventário: Custo total de todos os produtos comprados (valor de compra * quantidade comprada).
-    const totalCostOfInventory = products.reduce((acc, p) => acc + p.purchasePrice * p.quantityBought, 0);
+    const totalCostOfInventory = products.reduce((acc, p) => acc + p.purchasePrice * p.quantityPurchased, 0);
     
     // Lucro Líquido Total: Soma do lucro individual de cada produto vendido.
     const netProfit = products.reduce((acc, p) => acc + (p.salePrice - p.purchasePrice) * p.quantitySold, 0);

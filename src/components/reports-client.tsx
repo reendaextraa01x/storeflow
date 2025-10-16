@@ -92,7 +92,7 @@ export default function ReportsClient() {
         return filteredProducts.map(p => ({
             name: p.name,
             receita: p.salePrice * p.quantitySold,
-            custo: p.purchasePrice * p.quantityBought,
+            custo: p.purchasePrice * p.quantityPurchased,
         })).filter(d => d.receita > 0 || d.custo > 0);
     }, [filteredProducts]);
 
