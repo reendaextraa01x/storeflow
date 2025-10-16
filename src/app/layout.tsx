@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { FirebaseClientProvider } from '@/firebase';
 import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
+import { ProductsProvider } from '@/context/products-context';
 
 export const metadata: Metadata = {
   title: 'StoreFlow',
@@ -22,7 +23,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          {children}
+          <ProductsProvider>
+            {children}
+          </ProductsProvider>
           <Toaster />
         </FirebaseClientProvider>
       </body>

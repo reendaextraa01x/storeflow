@@ -1,19 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import type { Product } from '@/lib/types';
-import {
-  collection,
-  query,
-  onSnapshot,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  serverTimestamp,
-} from 'firebase/firestore';
+import { useState, useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -61,7 +48,10 @@ import * as z from 'zod';
 import { MoreHorizontal, PlusCircle, FileDown, Pencil, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
-import { useCollection } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
+import { addDoc, updateDoc, deleteDoc, doc, collection, serverTimestamp } from 'firebase/firestore';
+import type { Product } from '@/lib/types';
+import { useProducts } from '@/context/products-context';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório.'),
@@ -81,20 +71,14 @@ const formatCurrency = (value: number) => {
 };
 
 export default function ProductsClient() {
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const firestore = useFirestore();
-  const router = useRouter();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const { toast } = useToast();
-
-  const productsQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return collection(firestore, 'users', user.uid, 'products');
-  }, [firestore, user]);
-
-  const { data: products, isLoading: productsLoading } = useCollection<Product>(productsQuery);
-  const loading = isUserLoading || productsLoading;
+  
+  const { products, isLoading, totalRevenue, totalCost, totalNetProfit } = useProducts();
+  const loading = isLoading;
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -106,12 +90,6 @@ export default function ProductsClient() {
       quantitySold: 0,
     },
   });
-
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/');
-    }
-  }, [user, isUserLoading, router]);
 
   const handleOpenDialog = (product: Product | null = null) => {
     setEditingProduct(product);
@@ -208,26 +186,8 @@ export default function ProductsClient() {
     a.click();
     document.body.removeChild(a);
   };
-
-  const { totalRevenue, totalCost, totalNetProfit } = useMemo(() => {
-    if (!products) return { totalRevenue: 0, totalCost: 0, totalNetProfit: 0 };
-    const totalRevenue = products.reduce(
-      (acc, p) => acc + p.salePrice * p.quantitySold,
-      0
-    );
-    const totalCost = products.reduce(
-      (acc, p) => acc + p.purchasePrice * p.quantityBought,
-      0
-    );
-    return {
-      totalRevenue,
-      totalCost,
-      totalNetProfit: totalRevenue - totalCost,
-    };
-  }, [products]);
-
-
-  if (isUserLoading) return null;
+  
+  if (!user) return null;
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">

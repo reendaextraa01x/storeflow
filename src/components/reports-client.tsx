@@ -1,20 +1,15 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import type { Product } from '@/lib/types';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend, Line, LineChart } from 'recharts';
 import { ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from './ui/skeleton';
-import { useCollection } from '@/firebase';
-
+import { useProducts } from '@/context/products-context';
 
 const formatCurrency = (value: number) => {
-    if (Math.abs(value) > 1000) {
-        return `${(value / 1000).toFixed(1)}k`;
+    if (Math.abs(value) >= 1000) {
+        return `R$${(value / 1000).toFixed(1)}k`;
     }
     return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
@@ -23,23 +18,7 @@ const formatCurrency = (value: number) => {
 };
 
 export default function ReportsClient() {
-    const { user, isUserLoading } = useUser();
-    const firestore = useFirestore();
-    const router = useRouter();
-
-    const productsQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'products');
-    }, [firestore, user]);
-
-    const { data: products, isLoading: productsLoading } = useCollection<Product>(productsQuery);
-    const loading = isUserLoading || productsLoading;
-
-    useEffect(() => {
-        if (!isUserLoading && !user) {
-            router.push('/');
-        }
-    }, [user, isUserLoading, router]);
+    const { products, isLoading } = useProducts();
 
     const profitData = useMemo(() => {
         if (!products) return [];
@@ -58,7 +37,7 @@ export default function ReportsClient() {
         })).filter(d => d.receita > 0 || d.custo > 0);
     }, [products]);
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="container mx-auto py-8 px-4 md:px-6 space-y-8">
                  <div className="flex items-center justify-between">
