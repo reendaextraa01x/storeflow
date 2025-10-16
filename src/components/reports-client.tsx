@@ -6,7 +6,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { ChartContainer, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from './ui/skeleton';
-import { useProducts } from '@/context/products-context';
+import { useProducts } from '@/hooks/use-products';
 import type { Product } from '@/lib/types';
 
 const formatCurrency = (value: number) => {
