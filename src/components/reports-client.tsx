@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend, Line, LineChart } from 'recharts';
-import { ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 import { Skeleton } from './ui/skeleton';
 import { useProducts } from '@/context/products-context';
 
@@ -15,6 +15,21 @@ const formatCurrency = (value: number) => {
         style: 'currency',
         currency: 'BRL',
     }).format(value);
+};
+
+const chartConfig: ChartConfig = {
+    lucro: {
+        label: 'Lucro',
+        color: 'hsl(var(--primary))',
+    },
+    receita: {
+        label: 'Receita',
+        color: 'hsl(var(--primary))',
+    },
+    custo: {
+        label: 'Custo',
+        color: 'hsl(var(--destructive))',
+    },
 };
 
 export default function ReportsClient() {
@@ -80,8 +95,8 @@ export default function ReportsClient() {
                             <CardDescription>Lucro líquido total gerado por cada produto vendido.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={profitData}>
+                            <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+                                <BarChart accessibilityLayer data={profitData}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                     <XAxis dataKey="name" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                                     <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
@@ -91,7 +106,7 @@ export default function ReportsClient() {
                                     />
                                     <Bar dataKey="lucro" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                                 </BarChart>
-                            </ResponsiveContainer>
+                            </ChartContainer>
                         </CardContent>
                     </Card>
 
@@ -101,17 +116,17 @@ export default function ReportsClient() {
                             <CardDescription>Comparativo entre receita gerada e custo de aquisição.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={revenueCostData}>
+                           <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+                                <LineChart accessibilityLayer data={revenueCostData}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false}/>
                                     <XAxis dataKey="name" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                                     <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} tickLine={false} axisLine={false}/>
                                     <Tooltip content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))}/>} />
                                     <Legend />
-                                    <Line type="monotone" dataKey="receita" stroke="hsl(var(--primary))" strokeWidth={2} />
-                                    <Line type="monotone" dataKey="custo" stroke="hsl(var(--destructive))" strokeWidth={2} />
+                                    <Line type="monotone" dataKey="receita" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                                    <Line type="monotone" dataKey="custo" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
                                 </LineChart>
-                            </ResponsiveContainer>
+                            </ChartContainer>
                         </CardContent>
                     </Card>
                 </div>
