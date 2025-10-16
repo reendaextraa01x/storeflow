@@ -9,8 +9,8 @@ import { Button } from './ui/button';
 
 const navItems = [
   { name: 'Dashboard', href: '/dashboard' },
-  { name: 'Produtos', href: '/products' },
-  { name: 'Relatórios', href: '/reports' },
+  { name: 'Estoque', href: '/products' },
+  { name: 'Vendas', href: '/sales' },
 ];
 
 export function Header() {
@@ -30,7 +30,7 @@ export function Header() {
                 href={item.href}
                 className={cn(
                   'text-sm font-medium transition-colors hover:text-primary',
-                  pathname === item.href
+                  pathname.startsWith(item.href)
                     ? 'text-primary'
                     : 'text-muted-foreground'
                 )}

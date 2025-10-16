@@ -3,7 +3,7 @@ import ProductsClient from "@/components/products-client";
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Produtos | StoreFlow',
+  title: 'Estoque | StoreFlow',
 };
 
 export default function ProductsPage() {

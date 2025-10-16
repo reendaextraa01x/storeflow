@@ -25,7 +25,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -89,7 +88,7 @@ export default function ProductsClient() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const { toast } = useToast();
   
-  const { products, isLoading, totalRevenue, totalCost, totalNetProfit } = useProducts();
+  const { products, isLoading } = useProducts();
   const loading = isLoading;
 
   const form = useForm<ProductFormData>({
@@ -133,6 +132,7 @@ export default function ProductsClient() {
     try {
       const productData = {
         ...data,
+        userId: user.uid,
         lastSaleDate: data.lastSaleDate || new Date(), // Fallback to current date
       };
 
@@ -141,10 +141,7 @@ export default function ProductsClient() {
         await updateDoc(productRef, productData);
         toast({ title: 'Produto atualizado com sucesso!' });
       } else {
-        await addDoc(collection(firestore, 'users', user.uid, 'products'), {
-          ...productData,
-          userId: user.uid,
-        });
+        await addDoc(collection(firestore, 'users', user.uid, 'products'), productData);
         toast({ title: 'Produto adicionado com sucesso!' });
       }
       setDialogOpen(false);
@@ -176,18 +173,20 @@ export default function ProductsClient() {
 
   const exportToCSV = () => {
     if (!products) return;
-    const headers = ['Nome', 'Qtd. Comprada', 'Valor Compra (Unit)', 'Valor Venda (Unit)', 'Qtd. Vendida', 'Lucro Individual', 'Lucro Total'];
+    const headers = ['Nome', 'Qtd. Comprada', 'Valor Compra (Unit)', 'Valor Venda (Unit)', 'Qtd. Vendida', 'Estoque Atual' ,'Lucro Individual', 'Lucro Total'];
     const csvRows = [headers.join(',')];
 
     for (const product of products) {
         const individualProfit = product.salePrice - product.purchasePrice;
         const totalProfit = individualProfit * product.quantitySold;
+        const currentStock = product.quantityPurchased - product.quantitySold;
         const values = [
             `"${product.name}"`,
             product.quantityPurchased,
             product.purchasePrice,
             product.salePrice,
             product.quantitySold,
+            currentStock,
             individualProfit.toFixed(2),
             totalProfit.toFixed(2),
         ].join(',');
@@ -199,7 +198,7 @@ export default function ProductsClient() {
     const a = document.createElement('a');
     a.setAttribute('hidden', '');
     a.setAttribute('href', url);
-    a.setAttribute('download', 'produtos.csv');
+    a.setAttribute('download', 'estoque.csv');
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -212,7 +211,7 @@ export default function ProductsClient() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="font-headline text-3xl md:text-4xl font-bold tracking-tight">
-            Seus Produtos
+            Gestão de Estoque
           </h1>
           <p className="text-lg text-muted-foreground">
             Gerencie seu inventário de forma fácil e rápida.
@@ -283,8 +282,8 @@ export default function ProductsClient() {
                 <TableHead className="text-right">Qtd. comprada</TableHead>
                 <TableHead className="text-right">Valor de compra</TableHead>
                 <TableHead className="text-right">Qtd. vendida</TableHead>
+                <TableHead className="text-right">Estoque Atual</TableHead>
                 <TableHead className="text-right">Valor de venda</TableHead>
-                <TableHead className="text-right">Lucro individual</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -303,17 +302,15 @@ export default function ProductsClient() {
                  ))
               ) : products && products.length > 0 ? (
                 products.map((product) => {
-                  const profit = product.salePrice - product.purchasePrice;
+                  const currentStock = product.quantityPurchased - product.quantitySold;
                   return (
                     <TableRow key={product.id}>
                       <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell className="text-right">{product.quantityPurchased}</TableCell>
                       <TableCell className="text-right">{formatCurrency(product.purchasePrice)}</TableCell>
                       <TableCell className="text-right">{product.quantitySold}</TableCell>
+                      <TableCell className="text-right font-semibold">{currentStock}</TableCell>
                       <TableCell className="text-right">{formatCurrency(product.salePrice)}</TableCell>
-                      <TableCell className={`text-right font-semibold ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(profit)}
-                      </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -363,20 +360,6 @@ export default function ProductsClient() {
             </TableBody>
           </Table>
         </CardContent>
-        <CardFooter className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t px-6 py-4 mt-4">
-            <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Faturamento Bruto Total</p>
-                <p className="text-2xl font-bold text-green-600">{formatCurrency(totalRevenue)}</p>
-            </div>
-            <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Custo Total do Inventário</p>
-                <p className="text-2xl font-bold text-red-600">{formatCurrency(totalCost)}</p>
-            </div>
-            <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Lucro Líquido Total</p>
-                <p className="text-2xl font-bold text-primary">{formatCurrency(totalNetProfit)}</p>
-            </div>
-        </CardFooter>
       </Card>
     </div>
   );
