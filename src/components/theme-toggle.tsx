@@ -11,9 +11,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Skeleton } from "./ui/skeleton"
 
 export function ThemeToggle() {
   const { setTheme } = useTheme()
+  const [isClient, setIsClient] = React.useState(false)
+
+  React.useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  if (!isClient) {
+    return <Skeleton className="h-10 w-10 rounded-md" />
+  }
 
   return (
     <DropdownMenu>
