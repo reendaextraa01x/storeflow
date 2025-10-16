@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -37,7 +37,7 @@ const signupSchema = z.object({
 
 export function LoginForm() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -46,6 +46,12 @@ export function LoginForm() {
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   });
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, isUserLoading, router]);
 
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     setLoading(true);
@@ -66,9 +72,8 @@ export function LoginForm() {
     }
   }
   
-  if (user) {
-    router.replace('/dashboard');
-    return null;
+  if (isUserLoading || user) {
+    return null; // Or a loading spinner
   }
 
   return (
@@ -128,7 +133,7 @@ export function LoginForm() {
 
 export function SignupForm() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -137,6 +142,12 @@ export function SignupForm() {
     resolver: zodResolver(signupSchema),
     defaultValues: { name: '', email: '', password: '' },
   });
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, isUserLoading, router]);
 
   async function onSubmit(values: z.infer<typeof signupSchema>) {
     setLoading(true);
@@ -158,9 +169,8 @@ export function SignupForm() {
     }
   }
 
-  if (user) {
-    router.replace('/dashboard');
-    return null;
+  if (isUserLoading || user) {
+    return null; // Or a loading spinner
   }
 
   return (
